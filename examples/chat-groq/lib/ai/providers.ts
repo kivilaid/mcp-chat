@@ -1,5 +1,3 @@
-import { anthropic } from "@ai-sdk/anthropic"
-import { google } from '@ai-sdk/google';
 import { groq } from "@ai-sdk/groq"
 import { openai } from "@ai-sdk/openai"
 import { customProvider } from "ai"
@@ -23,18 +21,18 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
+        "llama-3.3-70b-versatile": groq("llama-3.3-70b-versatile"),
+        "llama-3.1-8b-instant": groq("llama-3.1-8b-instant"),
+        "gemma2-9b-it": groq("gemma2-9b-it"),
+        "llama3-70b-8192": groq("llama3-70b-8192"),
+        "llama3-8b-8192": groq("llama3-8b-8192"),
         "meta-llama/llama-4-scout-17b-16e-instruct": groq("meta-llama/llama-4-scout-17b-16e-instruct"),
-        "gemini-2.5-flash": google("gemini-2.5-flash"),
-        "gpt-4o-mini": openai("gpt-4o-mini"),
-        "gpt-4.1": openai("gpt-4.1-2025-04-14"),
-        "claude-opus-4-0": anthropic("claude-opus-4-20250514"),
-        "claude-sonnet-4-0": anthropic("claude-sonnet-4-20250514"),
         // 'chat-model-reasoning': wrapLanguageModel({
         //   model: fireworks('accounts/fireworks/models/deepseek-r1'),
         //   middleware: extractReasoningMiddleware({ tagName: 'think' }),
         // }),
-        "title-model": openai("gpt-4-turbo"),
-        "artifact-model": openai("gpt-4o-mini"),
+        "title-model": groq("llama-3.1-8b-instant"),
+        "artifact-model": groq("llama-3.1-8b-instant"),
       },
       imageModels: {
         "small-model": openai.image("dall-e-2"),
