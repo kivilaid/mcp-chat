@@ -7,6 +7,7 @@ import { ModelSelector } from "@/components/model-selector"
 import { SidebarToggle } from "@/components/sidebar-toggle"
 import { Button } from "@/components/ui/button"
 import { GitHubButton } from "@/components/github-button"
+import { DocsButton } from "@/components/docs-button"
 import { memo } from "react"
 import { PlusIcon } from "./icons"
 import { useSidebar } from "./ui/sidebar"
@@ -126,11 +127,12 @@ function PureChatHeader({
         </div>
       )}
 
-      {/* Spacer to push GitHub button to the right on desktop */}
+      {/* Spacer to push buttons to the right on desktop */}
       <div className="flex-1 hidden md:block"></div>
 
-      <div className="mt-1">
-        <GitHubButton className="hidden md:flex ml-auto" />
+      <div className="mt-1 hidden md:flex gap-2 ml-auto">
+        <GitHubButton style="secondary" />
+        <DocsButton style="main" />
       </div>
     </header>
   )

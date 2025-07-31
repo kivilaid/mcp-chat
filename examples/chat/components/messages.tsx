@@ -17,6 +17,7 @@ interface MessagesProps {
   isReadonly: boolean;
   isArtifactVisible: boolean;
   append: UseChatHelpers['append'];
+  isSignedIn?: boolean;
 }
 
 function PureMessages({
@@ -28,6 +29,7 @@ function PureMessages({
   reload,
   isReadonly,
   append,
+  isSignedIn = true,
 }: MessagesProps) {
   const [messagesContainerRef, messagesEndRef] =
     useScrollToBottom<HTMLDivElement>();
@@ -35,7 +37,7 @@ function PureMessages({
   return (
     <div
       ref={messagesContainerRef}
-      className="flex flex-col min-w-0 gap-6 flex-1 overflow-y-scroll pt-4"
+      className={`flex flex-col min-w-0 gap-6 flex-1 overflow-y-auto ${isSignedIn ? 'pt-4' : 'pt-6'}`}
     >
       {messages.length === 0 && <Overview />}
 

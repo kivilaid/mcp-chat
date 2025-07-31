@@ -1,6 +1,7 @@
 import { Toaster } from 'sonner';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from '@/components/theme-provider';
 import { BASE_METADATA } from '@/lib/constants';
 import DatadogInit from '@/components/datadog-init';
@@ -69,6 +70,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased">
         <DatadogInit />
+        <Analytics />
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

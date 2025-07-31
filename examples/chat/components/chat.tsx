@@ -13,7 +13,6 @@ import { Messages } from './messages';
 import { VisibilityType } from './visibility-selector';
 import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
-import { SuggestedActions } from './suggested-actions';
 import Link from 'next/link';
 import { useEffectiveSession } from '@/hooks/use-effective-session';
 
@@ -113,70 +112,86 @@ export function Chat({
   if (!isSignedIn) {
     return (
       <>
-        <div className="flex flex-col items-center justify-center min-w-0 h-dvh bg-background">
-          <div className="flex-1 flex flex-col justify-center w-full max-w-3xl px-4">
-            <div className="mb-8">
-              {messages.length > 0 ? (
-                <Messages
-                  chatId={id}
-                  status={status}
-                  votes={votes}
-                  messages={messages}
-                  setMessages={setMessages}
-                  reload={reload}
-                  isReadonly={isReadonly}
-                  isArtifactVisible={isArtifactVisible}
-                  append={append}
-                />
-              ) : (
-                <div className="text-center mb-4 px-4 sm:px-0">
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-2">
-                    <h1 className="text-3xl font-bold max-w-[280px] sm:max-w-none leading-tight">Welcome to Pipedream Chat</h1>
-                    <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300 mt-1 sm:mt-0">
-                      Alpha
-                    </span>
-                  </div>
-                  <p 
-                    className="text-muted-foreground max-w-sm mx-auto"
-                  >
-                    Chat directly with 2700+ APIs powered by {" "}
-                    <Link
-                      className="font-medium underline underline-offset-4"
-                      href="https://pipedream.com/docs/connect/mcp/developers"
-                      target="_blank"
-                    >
-                      Pipedream Connect
-                    </Link>
-                  </p>
+        <div className="flex flex-col min-w-0 h-dvh bg-background">
+          {/* Show welcome message only when there are no messages */}
+          {messages.length === 0 ? (
+            <div className="flex-1 flex flex-col justify-center items-center px-4">
+              <div className="text-center mb-8 max-w-3xl">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 mb-2">
+                  <h1 className="text-3xl font-bold max-w-[280px] sm:max-w-none leading-tight">Welcome to Pipedream Chat</h1>
+                  <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded dark:bg-blue-900 dark:text-blue-300 mt-1 sm:mt-0">
+                    Alpha
+                  </span>
                 </div>
-              )}
-            </div>
-            
-            <form className="w-full bg-background mb-4">
-              {!isReadonly && (
-                <MultimodalInput
-                  chatId={id}
-                  input={input}
-                  setInput={setInput}
-                  handleSubmit={handleSubmit}
-                  status={status}
-                  stop={stop}
-                  attachments={attachments}
-                  setAttachments={setAttachments}
-                  messages={messages}
-                  setMessages={setMessages}
-                  append={append}
-                />
-              )}
-            </form>
-            
-            {/* Show examples below the input for signed-out users */}
-            {messages.length === 0 && (
-              <div className="w-full mt-6">
-                <SuggestedActions append={append} chatId={id} />
+                <p 
+                  className="text-muted-foreground max-w-sm mx-auto"
+                >
+                  Chat directly with 2700+ APIs powered by {" "}
+                  <Link
+                    className="font-medium underline underline-offset-4"
+                    href="https://pipedream.com/docs/connect/mcp/developers"
+                    target="_blank"
+                  >
+                    Pipedream Connect
+                  </Link>
+                </p>
               </div>
-            )}
-          </div>
+              
+              {/* Centered input form for home page */}
+              <form className="w-full bg-background mb-4 max-w-3xl">
+                {!isReadonly && (
+                  <MultimodalInput
+                    chatId={id}
+                    input={input}
+                    setInput={setInput}
+                    handleSubmit={handleSubmit}
+                    status={status}
+                    stop={stop}
+                    attachments={attachments}
+                    setAttachments={setAttachments}
+                    messages={messages}
+                    setMessages={setMessages}
+                    append={append}
+                  />
+                )}
+              </form>
+            </div>
+          ) : (
+            <>
+              {/* Messages container - only show when there are messages */}
+              <Messages
+                chatId={id}
+                status={status}
+                votes={votes}
+                messages={messages}
+                setMessages={setMessages}
+                reload={reload}
+                isReadonly={isReadonly}
+                isArtifactVisible={isArtifactVisible}
+                append={append}
+                isSignedIn={false}
+              />
+
+              {/* Sticky input form at the bottom for chat pages */}
+              <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
+                {!isReadonly && (
+                  <MultimodalInput
+                    chatId={id}
+                    input={input}
+                    setInput={setInput}
+                    handleSubmit={handleSubmit}
+                    status={status}
+                    stop={stop}
+                    attachments={attachments}
+                    setAttachments={setAttachments}
+                    messages={messages}
+                    setMessages={setMessages}
+                    append={append}
+                  />
+                )}
+              </form>
+            </>
+          )}
         </div>
 
         <Artifact

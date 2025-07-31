@@ -41,9 +41,9 @@ export default async function Layout({
               <SidebarInset>{children}</SidebarInset>
             </>
           ) : (
-            <div className="flex flex-col min-h-svh w-full">
+            <div className="flex flex-col h-dvh w-full overflow-hidden">
               <SignedOutHeader />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1 overflow-hidden">{children}</main>
             </div>
           )}
         </SidebarProvider>
