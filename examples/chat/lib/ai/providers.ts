@@ -23,6 +23,8 @@ export const myProvider = isTestEnvironment
     })
   : customProvider({
       languageModels: {
+        "gemma2-9b-it": groq("gemma2-9b-it"),
+        "moonshotai/kimi-k2-instruct": groq("moonshotai/kimi-k2-instruct"),
         "meta-llama/llama-4-scout-17b-16e-instruct": groq("meta-llama/llama-4-scout-17b-16e-instruct"),
         "gemini-2.5-flash": google("gemini-2.5-flash"),
         "gpt-4o-mini": openai("gpt-4o-mini"),
