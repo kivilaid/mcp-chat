@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { useEffectiveSession } from '@/hooks/use-effective-session';
 import { ChatSDKError } from '@/lib/errors';
+import { UsageTracker } from './usage-tracker';
 
 export function Chat({
   id,
@@ -38,6 +39,7 @@ export function Chat({
   const isSignedIn = !!session?.user;
 
   const [input, setInput] = useState('');
+  const [currentUsage, setCurrentUsage] = useState<any>(null);
 
   const {
     messages,
@@ -209,6 +211,16 @@ export function Chat({
                 isSignedIn={false}
               />
 
+              {/* Usage tracker for chat pages */}
+              {messages.length > 0 && (
+                <div className="mx-auto px-4 w-full md:max-w-3xl mb-4">
+                  <UsageTracker
+                    usage={currentUsage}
+                    isVisible={messages.length > 0}
+                  />
+                </div>
+              )}
+
               {/* Sticky input form at the bottom for chat pages */}
               <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
                 {!isReadonly && (
@@ -273,6 +285,15 @@ export function Chat({
           isArtifactVisible={isArtifactVisible}
           append={append}
         />
+
+        {messages.length > 0 && (
+          <div className="mx-auto px-4 w-full md:max-w-3xl mb-4">
+            <UsageTracker
+              usage={currentUsage}
+              isVisible={messages.length > 0}
+            />
+          </div>
+        )}
 
         <form className="flex mx-auto px-4 bg-background pb-4 md:pb-6 gap-2 w-full md:max-w-3xl">
           {!isReadonly && (

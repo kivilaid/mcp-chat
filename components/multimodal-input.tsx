@@ -2,6 +2,7 @@
 
 import type { Attachment, UIMessage } from 'ai';
 import cx from 'classnames';
+import { motion, AnimatePresence } from 'framer-motion';
 import type React from 'react';
 import {
   useRef,
@@ -246,28 +247,51 @@ function PureMultimodalInput({
         tabIndex={-1}
       />
 
-      {(attachments.length > 0 || uploadQueue.length > 0) && (
-        <div
-          data-testid="attachments-preview"
-          className="flex flex-row gap-2 overflow-x-scroll items-end"
-        >
-          {attachments.map((attachment) => (
-            <PreviewAttachment key={attachment.url} attachment={attachment} />
-          ))}
+      <AnimatePresence>
+        {(attachments.length > 0 || uploadQueue.length > 0) && (
+          <motion.div
+            data-testid="attachments-preview"
+            className="flex flex-row gap-2 overflow-x-scroll items-end"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <AnimatePresence>
+              {attachments.map((attachment) => (
+                <motion.div
+                  key={attachment.url}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <PreviewAttachment attachment={attachment} />
+                </motion.div>
+              ))}
 
-          {uploadQueue.map((filename) => (
-            <PreviewAttachment
-              key={filename}
-              attachment={{
-                url: '',
-                name: filename,
-                contentType: '',
-              }}
-              isUploading={true}
-            />
-          ))}
-        </div>
-      )}
+              {uploadQueue.map((filename) => (
+                <motion.div
+                  key={filename}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <PreviewAttachment
+                    attachment={{
+                      url: '',
+                      name: filename,
+                      contentType: '',
+                    }}
+                    isUploading={true}
+                  />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Textarea
         data-testid="multimodal-input"
@@ -276,7 +300,7 @@ function PureMultimodalInput({
         value={input}
         onChange={handleInput}
         className={cx(
-          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-2xl !text-base bg-muted pb-10 dark:border-zinc-700',
+          'min-h-[24px] max-h-[calc(75dvh)] overflow-hidden resize-none rounded-xl !text-base bg-background pb-10 border border-input transition-colors focus-within:border-ring focus-within:ring-1 focus-within:ring-ring/20 hover:border-ring/50',
           className,
         )}
         rows={2}
@@ -299,12 +323,12 @@ function PureMultimodalInput({
       />
 
       <div className="absolute bottom-0 p-2 w-fit flex flex-row justify-start space-x-1">
-        {/* <AttachmentsButton 
-          fileInputRef={fileInputRef} 
-          status={status} 
+        <AttachmentsButton
+          fileInputRef={fileInputRef}
+          status={status}
           setSignInModalOpen={setIsSignInModalOpen}
-        /> */}
-        <AppsButton 
+        />
+        <AppsButton
           status={status}
           setAppSelectorOpen={setAppSelectorOpen}
         />
@@ -351,7 +375,7 @@ function PureAttachmentsButton({
   return (
     <Button
       data-testid="attachments-button"
-      className="rounded-md rounded-bl-lg p-[7px] h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+      className="rounded-lg p-2 h-fit transition-colors hover:bg-muted"
       onClick={(event) => {
         event.preventDefault();
         if (isUnauthenticated) {
@@ -362,8 +386,9 @@ function PureAttachmentsButton({
       }}
       disabled={status !== 'ready' || isUnauthenticated}
       variant="ghost"
+      size="sm"
     >
-      <PaperclipIcon size={14} />
+      <PaperclipIcon size={16} />
     </Button>
   );
 }
@@ -383,16 +408,17 @@ function PureAppsButton({
         <TooltipTrigger asChild>
           <Button
             data-testid="apps-button"
-            className="rounded-md rounded-bl-lg p-2 h-fit dark:border-zinc-700 hover:dark:bg-zinc-900 hover:bg-zinc-200"
+            className="rounded-lg p-2 h-fit transition-colors hover:bg-muted"
             onClick={(event) => {
               event.preventDefault();
               setAppSelectorOpen(true);
             }}
             disabled={status !== 'ready'}
             variant="ghost"
+            size="sm"
             aria-label="Explore available tools"
           >
-            <Hammer size={14} />
+            <Hammer size={16} />
           </Button>
         </TooltipTrigger>
         <TooltipContent>
