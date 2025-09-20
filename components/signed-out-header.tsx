@@ -4,10 +4,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { GitHubButton } from '@/components/github-button';
 import { SignInModal } from './sign-in-modal';
 import { useAuthContext } from './session-provider';
-import { DocsButton } from './docs-button';
 
 export function SignedOutHeader() {
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -31,8 +29,6 @@ export function SignedOutHeader() {
       </Link>
       
       <div className="flex items-center gap-3 ml-auto">
-        <GitHubButton className="hidden md:flex" style="secondary" />
-        <DocsButton className="hidden md:flex" style="secondary" />
         <Button onClick={handleGetStarted} variant="blue">
           Get started
         </Button>
