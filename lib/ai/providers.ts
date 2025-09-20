@@ -6,6 +6,18 @@ import { customProvider } from "ai"
 export const myProvider = customProvider({
       languageModels: {
         "gemini-2.5-flash": google("gemini-2.5-flash"),
+        "gpt-5": openai("gpt-5", {
+          structuredOutputs: true,
+          reasoningEffort: "medium",
+        }),
+        "gpt-5-mini": openai("gpt-5-mini", {
+          structuredOutputs: true,
+          reasoningEffort: "medium",
+        }),
+        "gpt-5-nano": openai("gpt-5-nano", {
+          structuredOutputs: true,
+          reasoningEffort: "medium",
+        }),
         "gpt-4o-mini": openai("gpt-4o-mini"),
         "gpt-4.1": openai("gpt-4.1-2025-04-14"),
         "claude-opus-4-0": anthropic("claude-opus-4-20250514"),

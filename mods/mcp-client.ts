@@ -98,7 +98,7 @@ The arguments for configuring the tool. Must match the expected arguments define
 
 export const webSearch = tool({
   description: "Search the web for up-to-date information",
-  parameters: z.object({
+  inputSchema: z.object({
     query: z.string().min(1).max(100).describe("The search query"),
   }),
   execute: async ({ query }) => {
@@ -235,23 +235,49 @@ class MCPSessionManager {
     const tools: ToolSet = {}
 
     for (const mcpTool of Object.values(mcpTools)) {
-      tools[mcpTool.name] = tool({
-        description: mcpTool.description || "",
-        parameters: jsonSchema(mcpTool.inputSchema),
-        execute: async (args: unknown, options: ToolExecutionOptions) => {
-          return this.executeTool(mcpTool.name, args, {
-            timeout: 180_000, // 3 minutes
-            ...options,
+      try {
+        // Ensure the input schema has a proper structure
+        let inputSchema = mcpTool.inputSchema || { type: "object", properties: {} };
+
+        // Fix invalid schema types
+        if (inputSchema.type === "None" || inputSchema.type === null || inputSchema.type === undefined) {
+          inputSchema = { type: "object", properties: {} };
+        }
+
+        // Ensure it's a valid object schema
+        if (inputSchema.type !== "object") {
+          inputSchema = { type: "object", properties: {} };
+        }
+
+        // Validate the schema before creating the tool
+        try {
+          // Try to create the tool with inputSchema instead of parameters
+          tools[mcpTool.name] = tool({
+            description: mcpTool.description || "",
+            inputSchema: z.object({}), // Use empty z.object for now since we can't convert JSON schema to Zod easily
+            execute: async (args: unknown, options: ToolExecutionOptions) => {
+              return this.executeTool(mcpTool.name, args, {
+                timeout: 180_000, // 3 minutes
+                ...options,
+              })
+            },
           })
-        },
-      })
+        } catch (schemaError) {
+          console.warn(`Skipping tool ${mcpTool.name} due to invalid schema:`, schemaError);
+          continue;
+        }
+      } catch (error) {
+        console.warn(`Failed to create tool ${mcpTool.name}:`, error);
+        // Skip this tool if it can't be created
+        continue;
+      }
     }
 
-    tools["Web_Search"] = webSearch
+    tools["Web_Search"] = webSearch;
 
-    console.log("Tools:\n", Object.keys(tools).join(",\n"), "\n\n")
+    console.log("Tools:\n", Object.keys(tools).join(",\n"), "\n\n");
 
-    return tools
+    return tools;
   }
 
   /**

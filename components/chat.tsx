@@ -1,8 +1,9 @@
 'use client';
 
 import type { Attachment, UIMessage } from 'ai';
+import { DefaultChatTransport } from 'ai';
 import { useChat } from '@ai-sdk/react';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import useSWR, { useSWRConfig } from 'swr';
 import { ChatHeader } from '@/components/chat-header';
 import type { Vote } from '@/lib/db/schema';
@@ -15,6 +16,7 @@ import { useArtifactSelector } from '@/hooks/use-artifact';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useEffectiveSession } from '@/hooks/use-effective-session';
+import { ChatSDKError } from '@/lib/errors';
 
 export function Chat({
   id,
@@ -35,35 +37,70 @@ export function Chat({
   const { data: session } = useEffectiveSession();
   const isSignedIn = !!session?.user;
 
+  const [input, setInput] = useState('');
+
   const {
     messages,
     setMessages,
-    handleSubmit,
-    input,
-    setInput,
-    append,
+    sendMessage,
     status,
     stop,
     reload,
   } = useChat({
     id,
-    body: { id, selectedChatModel: selectedChatModel },
     initialMessages,
     experimental_throttle: 100,
-    sendExtraMessageFields: true,
     generateId: generateUUID,
+    transport: new DefaultChatTransport({
+      api: '/api/chat',
+      prepareSendMessagesRequest({ messages, id, body }) {
+        return {
+          body: {
+            id,
+            messages,
+            selectedChatModel: selectedChatModel,
+            ...body,
+          },
+        };
+      },
+    }),
     onFinish: () => {
       mutate('/api/history');
     },
     onError: (error) => {
-      // Check if error is a 401 unauthorized due to authentication
-      if (error instanceof Error && error.message.includes('401')) {
+      if (error instanceof ChatSDKError) {
+        // Handle specific ChatSDK errors
+        if (error.message?.includes('AI Gateway requires a valid credit card')) {
+          // Handle credit card error specially if needed
+          toast.error(error.message);
+        } else {
+          toast.error(error.message);
+        }
+      } else if (error instanceof Error && error.message.includes('401')) {
         // This error is likely from the submitForm auth check, so we don't need to show an error
         return;
+      } else {
+        toast.error('An error occurred, please try again!');
       }
-      toast.error('An error occurred, please try again!');
     },
   });
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (input.trim()) {
+      sendMessage({ text: input });
+      setInput('');
+    }
+  };
+
+  const append = (message: UIMessage) => {
+    if (message.parts) {
+      const textParts = message.parts.filter(part => part.type === 'text');
+      if (textParts.length > 0) {
+        sendMessage({ text: textParts.map(part => part.text).join('') });
+      }
+    }
+  };
 
   const { data: votes } = useSWR<Array<Vote>>(
     messages.length >= 2 ? `/api/vote?chatId=${id}` : null,

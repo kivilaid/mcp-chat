@@ -13,6 +13,21 @@ export const chatModels: Array<ChatModel> = [
     description: "High performance, low cost model",
   },
   {
+    id: "gpt-5",
+    name: "GPT-5",
+    description: "Flagship GPT-5 model for complex tasks",
+  },
+  {
+    id: "gpt-5-mini",
+    name: "GPT-5 Mini",
+    description: "Compact GPT-5 for fast, efficient tasks",
+  },
+  {
+    id: "gpt-5-nano",
+    name: "GPT-5 Nano",
+    description: "Ultra-fast GPT-5 for lightweight operations",
+  },
+  {
     id: "gpt-4o-mini",
     name: "GPT-4o Mini",
     description: "Small model for fast, lightweight tasks",

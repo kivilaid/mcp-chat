@@ -85,7 +85,7 @@ function PureMultimodalInput({
   );
 
   useEffect(() => {
-    if (textareaRef.current) {
+    if (textareaRef.current && typeof setInput === 'function') {
       const domValue = textareaRef.current.value;
       // Prefer DOM value over localStorage to handle hydration
       const finalValue = domValue || localStorageInput || '';
@@ -131,9 +131,7 @@ function PureMultimodalInput({
     
     window.history.replaceState({}, '', `/chat/${chatId}`);
 
-    handleSubmit(undefined, {
-      experimental_attachments: attachments,
-    });
+    handleSubmit();
 
     setAttachments([]);
     setLocalStorageInput('');
@@ -447,7 +445,7 @@ function PureSendButton({
       onClick={() => {
         submitForm();
       }}
-      disabled={input.length === 0 || uploadQueue.length > 0}
+      disabled={!input || input.length === 0 || uploadQueue.length > 0}
     >
       <ArrowUpIcon size={14} />
     </Button>

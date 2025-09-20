@@ -17,20 +17,51 @@ import { getEffectiveSession, shouldPersistData } from "@/lib/auth-utils"
 import { MCPSessionManager } from "@/mods/mcp-client"
 import {
   UIMessage,
-  appendResponseMessages,
-  createDataStreamResponse,
   smoothStream,
+  convertToModelMessages,
+  createUIMessageStream,
+  JsonToSseTransformStream,
+  stepCountIs,
+  streamText,
 } from "ai"
 import { generateTitleFromUserMessage } from "../../actions"
-import { streamText } from "./streamText"
+import { ChatSDKError } from "@/lib/errors"
+import {
+  createResumableStreamContext,
+  type ResumableStreamContext,
+} from 'resumable-stream'
+import { after } from 'next/server'
 
 export const maxDuration = 60
 
 const MCP_BASE_URL = process.env.MCP_SERVER ? process.env.MCP_SERVER : "https://remote.mcp.pipedream.net"
 
+let globalStreamContext: ResumableStreamContext | null = null
+
+export function getStreamContext() {
+  if (!globalStreamContext) {
+    try {
+      globalStreamContext = createResumableStreamContext({
+        waitUntil: after,
+      })
+    } catch (error: any) {
+      if (error.message.includes('REDIS_URL')) {
+        console.log(
+          ' > Resumable streams are disabled due to missing REDIS_URL',
+        )
+      } else {
+        console.error(error)
+      }
+    }
+  }
+
+  return globalStreamContext
+}
+
 
 export async function POST(request: Request) {
   try {
+    const requestBody = await request.json()
     const {
       id,
       messages,
@@ -39,7 +70,7 @@ export async function POST(request: Request) {
       id: string
       messages: Array<UIMessage>
       selectedChatModel: string
-    } = await request.json()
+    } = requestBody
 
     const session = await getEffectiveSession()
 
@@ -60,12 +91,7 @@ export async function POST(request: Request) {
         userId: session?.user?.id,
         fullSession: session
       })
-      return new Response(JSON.stringify({ error: "Authentication required", redirectToAuth: true }), { 
-        status: 401,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
+      return new ChatSDKError('unauthorized:chat').toResponse()
     }
 
     const userId = session.user.id
@@ -73,7 +99,7 @@ export async function POST(request: Request) {
     const userMessage = getMostRecentUserMessage(messages)
 
     if (!userMessage) {
-      return new Response("No user message found", { status: 400 })
+      return new ChatSDKError('bad_request:api').toResponse()
     }
 
     // Only check/save chat and messages if persistence is enabled
@@ -142,71 +168,133 @@ export async function POST(request: Request) {
     console.log('DEBUG: Final sessionId for MCPSessionManager:', sessionId)
     const mcpSession = new MCPSessionManager(MCP_BASE_URL, userId, id, sessionId)
 
-    return createDataStreamResponse({
-      execute: async (dataStream) => {
-        const system = systemPrompt({ selectedChatModel })
-        await streamText(
-          { dataStream, userMessage },
-          {
-            model: myProvider.languageModel(selectedChatModel),
-            system,
-            messages,
-            maxSteps: 20,
-            experimental_transform: smoothStream({ chunking: "word" }),
-            experimental_generateMessageId: generateUUID,
-            getTools: () => mcpSession.tools({ useCache: false }),
-            onFinish: async ({ response }) => {
-              if (userId && shouldPersistData()) {
-                try {
-                  const assistantId = getTrailingMessageId({
-                    messages: response.messages.filter(
-                      (message) => message.role === "assistant"
-                    ),
-                  })
+    const system = systemPrompt({ selectedChatModel })
 
-                  if (!assistantId) {
-                    throw new Error("No assistant message found!")
-                  }
+    // Configure provider options for GPT models
+    const isGPT5Model = selectedChatModel.startsWith('gpt-5')
+    const isOpenAIModel = selectedChatModel.startsWith('gpt-')
+    // Get tools with validation
+    const tools = await mcpSession.tools({ useCache: false })
 
-                  const [, assistantMessage] = appendResponseMessages({
-                    messages: [userMessage],
-                    responseMessages: response.messages,
-                  })
+    const streamOptions: any = {
+      model: myProvider.languageModel(selectedChatModel),
+      system,
+      messages: convertToModelMessages(messages),
+      maxSteps: 20,
+      experimental_transform: smoothStream({ chunking: "word" }),
+      experimental_generateMessageId: generateUUID,
+      tools,
+      experimental_telemetry: {
+        isEnabled: isProductionEnvironment,
+        functionId: "stream-text",
+      },
+    }
 
-                  await saveMessages({
-                    messages: [
-                      {
-                        id: assistantId,
-                        chatId: id,
-                        role: assistantMessage.role,
-                        parts: assistantMessage.parts,
-                        attachments:
-                          assistantMessage.experimental_attachments ?? [],
-                        createdAt: new Date(),
-                      },
-                    ],
-                  })
-                } catch (error) {
-                  console.error("Failed to save chat")
-                }
+    // Add provider options for OpenAI models
+    if (isOpenAIModel) {
+      streamOptions.providerOptions = {
+        openai: {
+          temperature: 1, // Ensure temperature is explicitly set to 1 for all OpenAI models
+          ...(isGPT5Model && { reasoningEffort: "medium" }), // Only add reasoningEffort for GPT-5
+        }
+      }
+    }
+
+    const streamId = generateUUID()
+
+    const stream = createUIMessageStream({
+      execute: ({ writer: dataStream }) => {
+        const result = streamText({
+          model: myProvider.languageModel(selectedChatModel),
+          system,
+          messages: convertToModelMessages(messages),
+          maxSteps: 20,
+          experimental_transform: smoothStream({ chunking: "word" }),
+          experimental_generateMessageId: generateUUID,
+          tools,
+          experimental_telemetry: {
+            isEnabled: isProductionEnvironment,
+            functionId: "stream-text",
+          },
+          ...streamOptions,
+          onFinish: async ({ usage }) => {
+            if (userId && shouldPersistData()) {
+              try {
+                // Usage tracking could be added here if needed
+                dataStream.write({ type: 'data-usage', data: usage })
+              } catch (error) {
+                console.error("Failed to write usage data")
               }
-            },
-            experimental_telemetry: {
-              isEnabled: isProductionEnvironment,
-              functionId: "stream-text",
-            },
-          }
+            }
+          },
+        })
+
+        result.consumeStream()
+
+        dataStream.merge(
+          result.toUIMessageStream({
+            sendReasoning: true,
+          })
         )
       },
-      onError: (error) => {
-        console.error("Error:", error)
-        return "Oops, an error occured!"
+      generateId: generateUUID,
+      onFinish: async ({ messages: streamMessages }) => {
+        if (userId && shouldPersistData()) {
+          try {
+            const assistantMessages = streamMessages.filter(
+              (message) => message.role === "assistant"
+            )
+
+            if (assistantMessages.length > 0) {
+              await saveMessages({
+                messages: assistantMessages.map((message) => ({
+                  id: message.id,
+                  chatId: id,
+                  role: message.role,
+                  parts: message.parts,
+                  attachments: [],
+                  createdAt: new Date(),
+                })),
+              })
+            }
+          } catch (error) {
+            console.error("Failed to save chat", error)
+          }
+        }
+      },
+      onError: () => {
+        return "Oops, an error occurred!"
       },
     })
+
+    const streamContext = getStreamContext()
+
+    if (streamContext) {
+      return new Response(
+        await streamContext.resumableStream(streamId, () =>
+          stream.pipeThrough(new JsonToSseTransformStream())
+        )
+      )
+    } else {
+      return new Response(stream.pipeThrough(new JsonToSseTransformStream()))
+    }
   } catch (error) {
-    return new Response("An error occurred while processing your request!", {
-      status: 404,
-    })
+    if (error instanceof ChatSDKError) {
+      return error.toResponse()
+    }
+
+    // Check for Vercel AI Gateway credit card error
+    if (
+      error instanceof Error &&
+      error.message?.includes(
+        'AI Gateway requires a valid credit card on file to service requests',
+      )
+    ) {
+      return new ChatSDKError('bad_request:activate_gateway').toResponse()
+    }
+
+    console.error('Unhandled error in chat API:', error)
+    return new ChatSDKError('offline:chat').toResponse()
   }
 }
 
@@ -215,13 +303,13 @@ export async function DELETE(request: Request) {
   const id = searchParams.get("id")
 
   if (!id) {
-    return new Response("Not Found", { status: 404 })
+    return new ChatSDKError('bad_request:api').toResponse()
   }
 
   const session = await getEffectiveSession()
 
   if (!session || !session.user) {
-    return new Response("Unauthorized", { status: 401 })
+    return new ChatSDKError('unauthorized:chat').toResponse()
   }
   
   const userId = session.user.id
@@ -235,15 +323,14 @@ export async function DELETE(request: Request) {
     const chat = await getChatById({ id })
 
     if (chat.userId !== userId) {
-      return new Response("Unauthorized", { status: 401 })
+      return new ChatSDKError('forbidden:chat').toResponse()
     }
 
     await deleteChatById({ id })
 
     return new Response("Chat deleted", { status: 200 })
   } catch (error) {
-    return new Response("An error occurred while processing your request!", {
-      status: 500,
-    })
+    console.error('Error in DELETE chat API:', error)
+    return new ChatSDKError('offline:chat').toResponse()
   }
 }
