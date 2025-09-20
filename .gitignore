@@ -36,3 +36,6 @@ next-env.d.ts
 
 # Build artifacts
 **/dist/
+
+# Reference repositories
+vercel-ai-chatbot-reference/

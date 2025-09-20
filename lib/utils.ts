@@ -7,6 +7,7 @@ import type {
   ToolSet,
   UIMessage,
 } from 'ai';
+import type { ChatMessage } from '@/lib/types';
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -236,4 +237,11 @@ export function prettifyToolName(name: string, seed?: string) {
     word ? word.charAt(0).toUpperCase() + word.slice(1).toLowerCase() : word,
   );
   return capitalizedWords.join(' ');
+}
+
+export function getTextFromMessage(message: ChatMessage): string {
+  return message.parts
+    .filter((part) => part.type === 'text')
+    .map((part) => part.text)
+    .join('');
 }
