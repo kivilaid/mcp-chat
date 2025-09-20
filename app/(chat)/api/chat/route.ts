@@ -218,12 +218,14 @@ export async function POST(request: Request) {
           },
           ...streamOptions,
           onFinish: async ({ usage }) => {
+            console.log('DEBUG: onFinish called with usage:', usage);
+            console.log('DEBUG: userId:', userId, 'shouldPersistData():', shouldPersistData());
             if (userId && shouldPersistData()) {
               try {
-                // Usage tracking could be added here if needed
+                console.log('DEBUG: Writing usage data to stream:', { type: 'data-usage', data: usage });
                 dataStream.write({ type: 'data-usage', data: usage })
               } catch (error) {
-                console.error("Failed to write usage data")
+                console.error("Failed to write usage data", error)
               }
             }
           },

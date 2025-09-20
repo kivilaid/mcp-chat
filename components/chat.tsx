@@ -48,6 +48,7 @@ export function Chat({
     status,
     stop,
     reload,
+    data: streamData,
   } = useChat({
     id,
     initialMessages,
@@ -86,6 +87,28 @@ export function Chat({
       }
     },
   });
+
+  // Listen for usage data from the stream
+  useEffect(() => {
+    console.log('DEBUG: streamData changed:', streamData);
+    if (streamData && Array.isArray(streamData)) {
+      console.log('DEBUG: streamData array:', streamData);
+      const usageData = streamData.find((item: any) => item.type === 'data-usage');
+      console.log('DEBUG: found usageData:', usageData);
+      if (usageData && usageData.data) {
+        const usage = usageData.data;
+        console.log('DEBUG: setting usage:', usage);
+        setCurrentUsage({
+          tokens: {
+            input: usage.promptTokens || 0,
+            output: usage.completionTokens || 0,
+            total: usage.totalTokens || (usage.promptTokens || 0) + (usage.completionTokens || 0),
+          },
+          model: selectedChatModel,
+        });
+      }
+    }
+  }, [streamData, selectedChatModel]);
 
   const handleSubmit = (e?: React.FormEvent) => {
     e?.preventDefault();

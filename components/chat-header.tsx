@@ -34,7 +34,7 @@ function PureChatHeader({
   }
 
   return (
-    <header className="flex sticky top-0 bg-background py-1.5 items-start px-2 md:px-2 gap-2">
+    <header className="flex sticky top-0 bg-background py-1.5 items-start px-2 md:px-2 gap-2 z-20">
       {/* Always show sidebar toggle */}
       <div className="mt-1">
         <SidebarToggle />
@@ -83,15 +83,13 @@ function PureChatHeader({
         </Tooltip>
       </div>
 
-      {/* Desktop new chat button - hidden when sidebar is open to avoid overlap */}
+      {/* Desktop new chat button - now always visible with proper z-index */}
       <div className="mt-1 hidden md:block">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               variant="outline"
-              className={`md:px-2 md:h-fit ${
-                open ? 'md:hidden' : 'md:flex'
-              }`}
+              className="md:px-2 md:h-fit"
               onClick={() => {
                 router.push("/")
                 router.refresh()
