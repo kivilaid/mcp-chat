@@ -1,3 +1,7 @@
+// COMMENTED OUT FOR CLERK IMPLEMENTATION
+// TODO: Remove this file once Clerk implementation is stable
+
+/*
 import type { NextAuthConfig } from "next-auth"
 import { isAuthDisabled } from "@/lib/constants"
 
@@ -47,3 +51,7 @@ export const authConfig = {
     },
   },
 } satisfies NextAuthConfig
+*/
+
+// Temporary stub for Clerk migration
+export const authConfig = {};

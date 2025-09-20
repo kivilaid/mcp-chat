@@ -1,3 +1,7 @@
+// COMMENTED OUT FOR CLERK IMPLEMENTATION
+// TODO: Remove this file once Clerk implementation is stable
+
+/*
 import { compare } from 'bcrypt-ts';
 import NextAuth, { type User, type Session } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
@@ -66,3 +70,10 @@ export const {
     },
   },
 });
+*/
+
+// Temporary stubs for Clerk migration
+export const auth = null;
+export const signIn = null;
+export const signOut = null;
+export const handlers = { GET: null, POST: null };

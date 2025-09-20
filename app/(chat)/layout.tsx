@@ -2,7 +2,9 @@ import { cookies } from 'next/headers';
 
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import { auth } from '../(auth)/auth';
+// COMMENTED OUT FOR CLERK IMPLEMENTATION
+// import { auth } from '../(auth)/auth';
+import { auth } from '@clerk/nextjs/server';
 import Script from 'next/script';
 import { SessionProvider } from '@/components/session-provider';
 import { SignedOutHeader } from '@/components/signed-out-header';
@@ -16,12 +18,24 @@ export default async function Layout({
 }: {
   children: React.ReactNode;
 }) {
-  const [rawSession, cookieStore] = await Promise.all([auth(), cookies()]);
+  const cookieStore = await cookies();
   const isCollapsed = cookieStore.get('sidebar:state')?.value !== 'true';
-  
-  // Use effective session (real or guest based on auth requirement)
-  const session = isAuthDisabled ? createGuestSession() : rawSession;
-  const isSignedIn = !!session?.user;
+
+  let session = null;
+  let isSignedIn = false;
+
+  if (isAuthDisabled) {
+    // Use guest session when auth is disabled
+    session = createGuestSession();
+    isSignedIn = true;
+  } else {
+    // Use Clerk auth when enabled
+    const { userId } = await auth();
+    if (userId) {
+      session = { user: { id: userId } };
+      isSignedIn = true;
+    }
+  }
 
   return (
     <>

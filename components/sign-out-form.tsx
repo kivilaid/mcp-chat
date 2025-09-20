@@ -1,6 +1,7 @@
 import Form from 'next/form';
 
-import { signOut } from '@/app/(auth)/auth';
+// COMMENTED OUT FOR CLERK IMPLEMENTATION
+// import { signOut } from '@/app/(auth)/auth';
 
 export const SignOutForm = () => {
   return (
@@ -9,9 +10,11 @@ export const SignOutForm = () => {
       action={async () => {
         'use server';
 
-        await signOut({
-          redirectTo: '/',
-        });
+        // COMMENTED OUT FOR CLERK IMPLEMENTATION
+        // await signOut({
+        //   redirectTo: '/',
+        // });
+        console.log('Sign out clicked - functionality depends on auth configuration');
       }}
     >
       <button

@@ -1,4 +1,5 @@
-import { auth } from "@/app/(auth)/auth"
+// COMMENTED OUT FOR CLERK IMPLEMENTATION
+// import { auth } from "@/app/(auth)/auth"
 import { systemPrompt } from "@/lib/ai/prompts"
 import { myProvider } from "@/lib/ai/providers"
 import { isProductionEnvironment, isAuthDisabled } from "@/lib/constants"

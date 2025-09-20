@@ -5,6 +5,8 @@ import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from '@/components/theme-provider';
 import { BASE_METADATA } from '@/lib/constants';
 import DatadogInit from '@/components/datadog-init';
+import { ClerkProvider } from '@clerk/nextjs';
+import { isAuthDisabled } from '@/lib/constants';
 
 import './globals.css';
 
@@ -46,11 +48,27 @@ const THEME_COLOR_SCRIPT = `\
   updateThemeColor();
 })();`;
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const content = (
+    <>
+      <DatadogInit />
+      <Analytics />
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange
+      >
+        <Toaster position="top-center" />
+        {children}
+      </ThemeProvider>
+    </>
+  );
+
   return (
     <html
       lang="en"
@@ -69,17 +87,15 @@ export default async function RootLayout({
         />
       </head>
       <body className="antialiased">
-        <DatadogInit />
-        <Analytics />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <Toaster position="top-center" />
-          {children}
-        </ThemeProvider>
+        {isAuthDisabled ? (
+          content
+        ) : (
+          <ClerkProvider
+            publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ''}
+          >
+            {content}
+          </ClerkProvider>
+        )}
       </body>
     </html>
   )

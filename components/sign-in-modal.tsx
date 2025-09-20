@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { signIn } from 'next-auth/react';
+// COMMENTED OUT FOR CLERK IMPLEMENTATION - keeping modal for auth disabled mode
+// import { signIn } from 'next-auth/react';
 import {
   AlertDialog,
   AlertDialogContent,
@@ -19,7 +20,9 @@ interface SignInModalProps {
 export function SignInModal({ isOpen, onClose }: SignInModalProps) {
   const handleSignIn = (e: React.MouseEvent) => {
     e.preventDefault();
-    signIn('google', { callbackUrl: '/' });
+    // This modal is only used when auth is disabled
+    // The actual functionality is handled by the guest session
+    console.log('Sign in clicked in guest mode - this is just for UI demonstration');
   };
 
   return (

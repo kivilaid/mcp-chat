@@ -3,7 +3,14 @@
 import { isToday, isYesterday, subMonths, subWeeks } from 'date-fns';
 import Link from 'next/link';
 import { useParams, usePathname, useRouter } from 'next/navigation';
-import type { User } from 'next-auth';
+// COMMENTED OUT FOR CLERK IMPLEMENTATION
+// import type { User } from 'next-auth';
+// Using a generic user type that works for both auth systems
+type User = {
+  id: string;
+  email?: string | null;
+  name?: string | null;
+};
 import { memo, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import useSWR from 'swr';

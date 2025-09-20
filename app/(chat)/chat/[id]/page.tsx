@@ -2,7 +2,8 @@ import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 
-import { auth } from '@/app/(auth)/auth';
+// COMMENTED OUT FOR CLERK IMPLEMENTATION
+// import { auth } from '@/app/(auth)/auth';
 import { Chat } from '@/components/chat';
 import { getChatById, getMessagesByChatId } from '@/lib/db/queries';
 import { DataStreamHandler } from '@/components/data-stream-handler';
